@@ -5,7 +5,8 @@ from django.shortcuts import get_object_or_404
 from .models import Project
 from .serializers import ProjectSerializer
 from user.models import Bid,Submission,Review,Contract
-from user.serializers import BidSerializer,ContractSerializer
+from user.serializers import BidSerializer,ContractSerializer,ReviewSerializer
+from django.db import transaction
 
 class ProjectCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -177,3 +178,36 @@ class ContractDetailView(APIView):
         serializer = ContractSerializer(contract)
         return Response(serializer.data)
 
+
+class FinishContractView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def post(self, request, contract_id):
+        contract = get_object_or_404(Contract, id=contract_id)
+        if contract.client != request.user:
+            raise PermissionDenied("Faqat client contractni tugata oladi")
+        contract.status = "finished"
+        contract.save()
+        project = contract.project
+        project.status = "completed"
+        project.save()
+        return Response(
+            {"message": "Contract tugatildi"},
+            status=status.HTTP_200_OK
+        )
+
+class ReviewCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def post(self, request, contract_id):
+        contract = get_object_or_404(Contract, id=contract_id)
+        if contract.client != request.user:
+            raise PermissionDenied("Faqat client review yozishi mumkin")
+        if hasattr(contract, "review"):
+            return Response(
+                {"error": "Bu contract uchun review allaqachon yozilgan"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        serializer = ReviewSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(contract=contract)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
