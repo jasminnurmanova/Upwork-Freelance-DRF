@@ -66,9 +66,7 @@ http://127.0.0.1:8000/swagger/
 
 ## Postman Documentation
 
-Add your Postman documentation link here.
-
-Example:
+POSTMAN: https://documenter.getpostman.com/view/51287189/2sBXigNEGX
 
 ---
 
@@ -142,3 +140,5 @@ python manage.py runserver
 ```
 http://127.0.0.1:8000/swagger/
 ```
+
+
